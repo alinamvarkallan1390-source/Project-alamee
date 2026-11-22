@@ -7,6 +7,7 @@ type Dict = Record<string, string>;
 
 const fa: Dict = {
   // nav / common
+  'nav.home': 'صفحه اصلی',
   'nav.about': 'درباره ما',
   'nav.projects': 'پروژه‌ها',
   'nav.services': 'خدمات',
@@ -99,6 +100,7 @@ const fa: Dict = {
 };
 
 const en: Dict = {
+  'nav.home': 'Home',
   'nav.about': 'About',
   'nav.projects': 'Projects',
   'nav.services': 'Services',
@@ -222,14 +224,14 @@ export function useI18n() {
 /** Translate known DB content (Persian default) to English when needed. */
 const enContentMap: Record<string, string> = {
   // company / hero
-  'آلامee': 'ALAMEE',
+  'آراما': 'ARAMA',
   'ما اعیاد می‌سازیم، نه فقط ساختمان': 'We Build Icons. Not Just Buildings.',
   'ما اعیاد می‌سازیم': 'We Build Icons',
   'نه فقط ساختمان': 'Not Just Buildings',
   'ساختمان‌های فردا': "Building Tomorrow's Landmarks",
   'دو دهه تعالی معماری': 'Two decades of architectural excellence',
   // sections titles
-  'درباره آلامee': 'About ALAMEE',
+  'درباره آراما': 'About ARAMA',
   'کارهای برگزیده': 'Selected Works',
   'خدمات ما': 'What We Do',
   'فرایند کار': 'Our Process',

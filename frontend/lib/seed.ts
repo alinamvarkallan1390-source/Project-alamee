@@ -1,5 +1,5 @@
 export const seedSettings: Record<string, string> = {
-  company_name: 'آلامee',
+  company_name: 'آراما',
   tagline: 'ساختمان‌های فردا',
   hero_title: 'ما اعیاد می‌سازیم، نه فقط ساختمان',
   hero_subtitle: 'معماری، مهندسی و توسعه لوکس — در سه‌بعدی طراحی، در واقعیت ساخته می‌شود.',

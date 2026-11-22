@@ -44,3 +44,21 @@ input:focus, textarea:focus, select:focus { border-color: #C9A96A !important; bo
 /* RTL fixes for native arrows / list markers */
 [dir="rtl"] select { direction: rtl; }
 [dir="rtl"] select option { direction: ltr; }
+
+/* Black & white "grand" theme toggle */
+.bw-theme {
+  filter: grayscale(1) contrast(1.05);
+  background: #000 !important;
+}
+.bw-theme .glass { background: rgba(10, 10, 10, 0.7); border-color: rgba(220, 220, 220, 0.25); }
+.bw-theme .gold-text {
+  background: linear-gradient(120deg, #f2f2f2, #c8c8c8 55%, #8f8f8f);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.bw-theme .bg-champagne { background: #e8e8e8 !important; }
+.bw-theme .text-champagne { color: #f0f0f0 !important; }
+.bw-theme .border-champagne\/40 { border-color: rgba(220,220,220,0.45) !important; }
+.bw-theme .border-champagne\/50 { border-color: rgba(220,220,220,0.5) !important; }
+.bw-theme .hover\:bg-champagne:hover { background: #e8e8e8 !important; }
+.bw-theme .hover\:text-champagne:hover { color: #f5f5f5 !important; }
+.bw-theme .hover\:border-champagne:hover { border-color: #e8e8e8 !important; }
