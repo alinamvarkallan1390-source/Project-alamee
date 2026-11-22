@@ -2,9 +2,9 @@
 
 [![تغییر زبان](https://img.shields.io/badge/Language-Persian-blue)](#) [![stack](https://img.shields.io/badge/Stack-Next.js%20%7C%20Three.js%20%7C%20Supabase-DARKGREEN)](#)
 
-> **آدرس سایت زنده: https://alamee-construction-m19ucq0cx.vercel.app**
+> **آدرس سایت زنده: https://alamee-construction.vercel.app**
 >
-> **صفحه مدیریت (ادمین): https://alamee-construction-m19ucq0cx.vercel.app/admin**
+> **صفحه مدیریت (ادمین): https://alamee-construction.vercel.app/admin**
 
 آلامee یک وبسایت سه‌بعدی تشریفاتی برای یک شرکت لوکس ساخت‌وساز، املاک و  ساختمانی است که با استانداردهای آواردز و اپل طراحی شده است. تجربه اصلی یک ساختمان آسمان‌خراش سه‌بعدی مهی‌کننده است که در میان اسکرول، دوربین به‌شکل سینمایی ۳۶۰° حول ساختمان می‌چرخد، با شیشه‌های واقع‌گرایانه، نورپردازی معماری، بالکن، پنجره‌ها و سایه‌روشن‌های محیطی.
 
