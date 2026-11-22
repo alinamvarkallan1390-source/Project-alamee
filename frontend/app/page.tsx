@@ -27,7 +27,7 @@ function Counter({ value }: { value: string }) {
       io.disconnect();
       const start = performance.now();
       const tick = (t: number) => {
-        const p = Math.min(1, (t - start) / 1600);
+        const p = Math.max(0, Math.min(1, (t - start) / 1600));
         setN(num * (1 - Math.pow(1 - p, 3)));
         if (p < 1) requestAnimationFrame(tick);
       };
