@@ -4,21 +4,43 @@
 
 :root { --champagne: #C9A96A; }
 html { scroll-behavior: smooth; }
-body { background: #0A0A0B; color: #F5F1E8; font-family: Inter, system-ui, sans-serif; overflow-x: hidden; }
+body {
+  background: #0A0A0B;
+  color: #F5F1E8;
+  font-family: 'Vazirmatn', Inter, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+[lang="en"] body { font-family: Inter, system-ui, sans-serif; }
+.font-serif { font-family: 'Playfair Display', 'Vazirmatn', Georgia, serif; }
 ::selection { background: #C9A96A; color: #0A0A0B; }
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: #0A0A0B; }
 ::-webkit-scrollbar-thumb { background: #2A2D33; border-radius: 6px; }
 ::-webkit-scrollbar-thumb:hover { background: #C9A96A; }
 
-.glass { background: rgba(18, 18, 20, 0.55); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(201, 169, 106, 0.18); }
-.gold-text { background: linear-gradient(120deg, #E8D5A8, #C9A96A 55%, #9A7F4A); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.glass {
+  background: rgba(18, 18, 20, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(201, 169, 106, 0.18);
+}
+.gold-text {
+  background: linear-gradient(120deg, #E8D5A8, #C9A96A 55%, #9A7F4A);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
 .gold-line { background: linear-gradient(90deg, transparent, #C9A96A, transparent); height: 1px; }
 .reveal { opacity: 0; transform: translateY(36px); }
-.reveal.visible { opacity: 1; transform: none; transition: opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1); }
+.reveal.visible {
+  opacity: 1; transform: none;
+  transition: opacity 0.9s cubic-bezier(0.22,1,0.36,1), transform 0.9s cubic-bezier(0.22,1,0.36,1);
+}
 @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .floaty { animation: floaty 3.2s ease-in-out infinite; }
 @keyframes scrollDot { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(14px); opacity: 0; } 100% { transform: translateY(0); opacity: 0; } }
 .scroll-dot { animation: scrollDot 1.8s ease-in-out infinite; }
 input, textarea, select { outline: none; }
 input:focus, textarea:focus, select:focus { border-color: #C9A96A !important; box-shadow: 0 0 0 3px rgba(201,169,106,0.15); }
+
+/* RTL fixes for native arrows / list markers */
+[dir="rtl"] select { direction: rtl; }
+[dir="rtl"] select option { direction: ltr; }

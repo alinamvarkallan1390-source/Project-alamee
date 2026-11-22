@@ -238,7 +238,7 @@ export default function Skyscraper3D({ rotationSpeed = 0.35, lighting = 1.2, mod
         shadows={quality === 'high'}
         dpr={quality === 'low' ? [1, 1.25] : [1, 1.75]}
         camera={{ position: [0, 20, 52], fov: 42, near: 0.1, far: 400 }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        gl={{ antialias: true, powerPreference: 'high-performance', alpha: true }}
       >
         <fog attach="fog" args={['#0A0A0B', 70, 160]} />
         <ambientLight intensity={0.35 * lighting} />
