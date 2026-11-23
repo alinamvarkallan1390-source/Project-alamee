@@ -1,277 +1,59 @@
 'use client';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, Lightformer, ContactShadows, Html } from '@react-three/drei';
-import { Suspense, useMemo, useRef, useEffect, useState } from 'react';
-import * as THREE from 'three';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Environment, Lightformer, OrbitControls, ContactShadows } from '@react-three/drei';
+import { Suspense, useEffect, useState } from 'react';
 
-function useIsMobile() {
-  const [m, setM] = useState(false);
+/* A conceptual tower made from three offset glass volumes with terraces. */
+function Volume({ y, height, width, depth, x = 0, z = 0 }: { y: number; height: number; width: number; depth: number; x?: number; z?: number }) {
+  const floors = Math.floor(height / 0.75);
+  return <group position={[x, y, z]}>
+    <mesh position={[0, height / 2, 0]}><boxGeometry args={[width, height, depth]} /><meshPhysicalMaterial color="#617676" metalness={0.82} roughness={0.18} clearcoat={1} clearcoatRoughness={0.14} /></mesh>
+    {Array.from({ length: floors + 1 }, (_, i) => <mesh key={i} position={[0, i * height / floors, 0]}><boxGeometry args={[width + 0.12, 0.055, depth + 0.12]} /><meshStandardMaterial color="#c7b493" metalness={0.7} roughness={0.32} /></mesh>)}
+    {Array.from({ length: 7 }, (_, i) => <group key={i} position={[(i / 6 - 0.5) * width, height / 2, 0]}>
+      <mesh position={[0, 0, depth / 2 + 0.04]}><boxGeometry args={[0.055, height, 0.12]} /><meshStandardMaterial color="#aa9b81" metalness={0.7} roughness={0.35} /></mesh>
+      <mesh position={[0, 0, -depth / 2 - 0.04]}><boxGeometry args={[0.055, height, 0.12]} /><meshStandardMaterial color="#aa9b81" metalness={0.7} roughness={0.35} /></mesh>
+    </group>)}
+    {Array.from({ length: 5 }, (_, i) => <group key={i} position={[0, height / 2, (i / 4 - 0.5) * depth]}>
+      <mesh position={[width / 2 + 0.04, 0, 0]}><boxGeometry args={[0.12, height, 0.055]} /><meshStandardMaterial color="#aa9b81" metalness={0.7} roughness={0.35} /></mesh>
+      <mesh position={[-width / 2 - 0.04, 0, 0]}><boxGeometry args={[0.12, height, 0.055]} /><meshStandardMaterial color="#aa9b81" metalness={0.7} roughness={0.35} /></mesh>
+    </group>)}
+    <mesh position={[0, height + 0.08, 0]}><boxGeometry args={[width + 0.48, 0.16, depth + 0.48]} /><meshStandardMaterial color="#c3b496" metalness={0.45} roughness={0.42} /></mesh>
+  </group>;
+}
+function Tower() {
+  return <group position={[0, -12, 0]} rotation={[0, -0.2, 0]}>
+    <mesh position={[0, 0.15, 0]}><boxGeometry args={[11, 0.3, 9]} /><meshStandardMaterial color="#857b6d" roughness={0.85} /></mesh>
+    <mesh position={[0, 1, 0]}><boxGeometry args={[8, 1.6, 6.5]} /><meshPhysicalMaterial color="#404f50" metalness={0.75} roughness={0.22} clearcoat={1} /></mesh>
+    <mesh position={[0, 1.85, 0]}><boxGeometry args={[8.5, 0.18, 7]} /><meshStandardMaterial color="#cbb899" metalness={0.5} roughness={0.4} /></mesh>
+    <Volume y={2} height={8} width={6.5} depth={5.4} />
+    <Volume y={10.25} height={7.5} width={5.5} depth={4.7} x={-0.45} z={-0.25} />
+    <Volume y={18} height={6} width={4.4} depth={3.8} x={-0.9} z={-0.48} />
+    {/* warm recessed entrance, planting, and terrace edges give scale */}
+    <mesh position={[0, 0.95, 3.27]}><boxGeometry args={[2.4, 1.45, 0.08]} /><meshStandardMaterial color="#b59a70" emissive="#7d5a33" emissiveIntensity={0.5} /></mesh>
+    {[[3.4, 0.5, 2.8], [-3.4, 0.5, 2.8], [2.35, 10.45, 1.8], [1.5, 18.2, 1.35]].map(([x, y, z], i) => <group key={i} position={[x, y, z]}><mesh><boxGeometry args={[1.1, 0.45, 0.65]} /><meshStandardMaterial color="#887e6e" roughness={0.9} /></mesh><mesh position={[0, 0.45, 0]}><sphereGeometry args={[0.48, 10, 8]} /><meshStandardMaterial color="#425746" roughness={1} /></mesh></group>)}
+  </group>;
+}
+function Camera() {
+  const { camera, size } = useThree();
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px)');
-    setM(mq.matches);
-    const fn = (e: MediaQueryListEvent) => setM(e.matches);
-    mq.addEventListener('change', fn);
-    return () => mq.removeEventListener('change', fn);
-  }, []);
-  return m;
-}
-
-function ProceduralTower({ quality, rotationSpeed }: { quality: 'high' | 'low'; rotationSpeed: number }) {
-  const group = useRef<THREE.Group>(null!);
-  const winRef = useRef<THREE.InstancedMesh>(null!);
-  const balcRef = useRef<THREE.InstancedMesh>(null!);
-  const isMobile = quality === 'low';
-
-  const { windows, balconies } = useMemo(() => {
-    const floors = isMobile ? 26 : 42;
-    const cols = isMobile ? 5 : 8;
-    const wins: { pos: [number, number, number]; rotY: number; lit: number }[] = [];
-    const balcs: { pos: [number, number, number]; rotY: number }[] = [];
-    const W = 10, D = 10, H = 58;
-    for (let f = 0; f < floors; f++) {
-      const y = 4 + (f / floors) * H;
-      for (let c = 0; c < cols; c++) {
-        const x = -W / 2 + ((c + 0.5) / cols) * W;
-        const lit = Math.random();
-        wins.push({ pos: [x, y, D / 2 + 0.06], rotY: 0, lit });
-        wins.push({ pos: [x, y, -D / 2 - 0.06], rotY: Math.PI, lit: Math.random() });
-        const z = -D / 2 + ((c + 0.5) / cols) * D;
-        wins.push({ pos: [W / 2 + 0.06, y, z], rotY: Math.PI / 2, lit: Math.random() });
-        wins.push({ pos: [-W / 2 - 0.06, y, z], rotY: -Math.PI / 2, lit: Math.random() });
-      }
-      if (f % 3 === 0) {
-        for (let c = 1; c < cols; c += 2) {
-          const x = -W / 2 + (c / cols) * W;
-          balcs.push({ pos: [x, y - 0.5, D / 2 + 0.7], rotY: 0 });
-          balcs.push({ pos: [x, y - 0.5, -D / 2 - 0.7], rotY: Math.PI });
-        }
-      }
-    }
-    return { windows: wins, balconies: balcs };
-  }, [isMobile]);
-
-  useEffect(() => {
-    const m = winRef.current;
-    if (!m) return;
-    const dummy = new THREE.Object3D();
-    const color = new THREE.Color();
-    windows.forEach((w, i) => {
-      dummy.position.set(...w.pos);
-      dummy.rotation.set(0, w.rotY, 0);
-      dummy.updateMatrix();
-      m.setMatrixAt(i, dummy.matrix);
-      if (w.lit > 0.72) color.set('#E8C97A');
-      else if (w.lit > 0.45) color.set('#3A4A5C');
-      else color.set('#141A22');
-      m.setColorAt(i, color);
-    });
-    m.instanceMatrix.needsUpdate = true;
-    if (m.instanceColor) m.instanceColor.needsUpdate = true;
-  }, [windows]);
-
-  useEffect(() => {
-    const m = balcRef.current;
-    if (!m) return;
-    const dummy = new THREE.Object3D();
-    balconies.forEach((b, i) => {
-      dummy.position.set(...b.pos);
-      dummy.rotation.set(0, b.rotY, 0);
-      dummy.updateMatrix();
-      m.setMatrixAt(i, dummy.matrix);
-    });
-    m.instanceMatrix.needsUpdate = true;
-  }, [balconies]);
-
-  useFrame((state, delta) => {
-    group.current.rotation.y += delta * rotationSpeed * 0.12;
-  });
-
-  return (
-    <group ref={group}>
-      {/* Podium */}
-      <mesh position={[0, 1.2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[22, 2.4, 22]} />
-        <meshStandardMaterial color="#1A1A1E" metalness={0.6} roughness={0.35} />
-      </mesh>
-      {/* Main shaft — glass */}
-      <mesh position={[0, 33, 0]} castShadow receiveShadow>
-        <boxGeometry args={[10, 58, 10]} />
-        <meshPhysicalMaterial color="#0E1620" metalness={0.9} roughness={0.12} clearcoat={1} clearcoatRoughness={0.1} envMapIntensity={1.4} />
-      </mesh>
-      {/* Taper crown */}
-      <mesh position={[0, 64.5, 0]} castShadow>
-        <boxGeometry args={[7.5, 5, 7.5]} />
-        <meshStandardMaterial color="#14161A" metalness={0.85} roughness={0.25} />
-      </mesh>
-      {/* Gold crown band */}
-      <mesh position={[0, 67.2, 0]}>
-        <boxGeometry args={[7.8, 0.5, 7.8]} />
-        <meshStandardMaterial color="#C9A96A" metalness={1} roughness={0.25} emissive="#C9A96A" emissiveIntensity={0.35} />
-      </mesh>
-      {/* Spire */}
-      <mesh position={[0, 72, 0]}>
-        <cylinderGeometry args={[0.12, 0.5, 9, 8]} />
-        <meshStandardMaterial color="#C9A96A" metalness={1} roughness={0.2} emissive="#C9A96A" emissiveIntensity={0.5} />
-      </mesh>
-      {/* Sky gardens */}
-      {[18, 36, 50].map((y) => (
-        <mesh key={y} position={[0, y, 0]}>
-          <boxGeometry args={[10.6, 1.1, 10.6]} />
-          <meshStandardMaterial color="#1E3A2A" metalness={0.2} roughness={0.9} />
-        </mesh>
-      ))}
-      {/* Windows */}
-      <instancedMesh ref={winRef} args={[undefined, undefined, windows.length]} frustumCulled={false}>
-        <planeGeometry args={[0.85, 1.1]} />
-        <meshStandardMaterial metalness={0.7} roughness={0.25} emissive="#E8C97A" emissiveIntensity={0.55} />
-      </instancedMesh>
-      {/* Balconies */}
-      <instancedMesh ref={balcRef} args={[undefined, undefined, balconies.length]} frustumCulled={false}>
-        <boxGeometry args={[1.5, 0.18, 1.1]} />
-        <meshStandardMaterial color="#2A2D33" metalness={0.8} roughness={0.4} />
-      </instancedMesh>
-    </group>
-  );
-}
-
-function ContextBuildings({ quality }: { quality: 'high' | 'low' }) {
-  const buildings = useMemo(() => {
-    const arr: { pos: [number, number, number]; size: [number, number, number] }[] = [];
-    const spots: [number, number][] = [[-26, -14], [28, -18], [-30, 16], [32, 14], [-16, 30], [18, 32], [0, -34], [-38, -2], [40, 2]];
-    spots.forEach(([x, z], i) => {
-      const h = 10 + ((i * 7) % 22);
-      arr.push({ pos: [x, h / 2, z], size: [8 + (i % 3) * 2, h, 8] });
-    });
-    return arr;
-  }, []);
-  return (
-    <group>
-      {buildings.map((b, i) => (
-        <mesh key={i} position={b.pos} receiveShadow>
-          <boxGeometry args={b.size} />
-          <meshStandardMaterial color="#101216" metalness={0.5} roughness={0.6} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function Dust({ quality }: { quality: 'high' | 'low' }) {
-  const ref = useRef<THREE.Points>(null!);
-  const count = quality === 'low' ? 300 : 900;
-  const positions = useMemo(() => {
-    const arr = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 90;
-      arr[i * 3 + 1] = Math.random() * 70;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 90;
-    }
-    return arr;
-  }, [count]);
-  useFrame((_, delta) => { ref.current.rotation.y += delta * 0.015; });
-  return (
-    <points ref={ref}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <pointsMaterial size={0.18} color="#C9A96A" transparent opacity={0.55} sizeAttenuation depthWrite={false} />
-    </points>
-  );
-}
-
-function CameraRig({ scrollRef, dragRef, quality }: { scrollRef: React.MutableRefObject<number>; dragRef: React.MutableRefObject<{ x: number; y: number }>; quality: 'high' | 'low' }) {
-  const { camera } = useThree();
-  const target = useRef({ angle: 0, radius: 52, height: 20 });
-  useFrame((state, delta) => {
-    const s = scrollRef.current; // 0..1
-    const angle = s * Math.PI * 2 + dragRef.current.x * 0.005;
-    const radius = quality === 'low' ? 58 : 52 - s * 12;
-    const height = 18 + s * 14 + dragRef.current.y * 0.02;
-    target.current.angle += (angle - target.current.angle) * Math.min(1, delta * 3.5);
-    target.current.radius += (radius - target.current.radius) * Math.min(1, delta * 2);
-    target.current.height += (height - target.current.height) * Math.min(1, delta * 2);
-    const a = target.current.angle;
-    camera.position.set(Math.sin(a) * target.current.radius, target.current.height, Math.cos(a) * target.current.radius);
-    camera.lookAt(0, 26, 0);
-  });
+    const aspect = size.width / Math.max(size.height, 1);
+    const distance = Math.max(43, 17 / Math.max(aspect, 0.35));
+    camera.position.set(distance * 0.55, distance * 0.23, distance * 0.84);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }, [camera, size.width, size.height]);
   return null;
 }
-
-export default function Skyscraper3D({ rotationSpeed = 0.35, lighting = 1.2, modelUrl = '' }: { rotationSpeed?: number; lighting?: number; modelUrl?: string }) {
-  const isMobile = useIsMobile();
-  const quality: 'high' | 'low' = isMobile ? 'low' : 'high';
-  const scrollRef = useRef(0);
-  const dragRef = useRef({ x: 0, y: 0 });
-  const dragging = useRef(false);
-  const last = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const onScroll = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      scrollRef.current = max > 0 ? window.scrollY / max : 0;
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const onPointerDown = (e: React.PointerEvent) => { dragging.current = true; last.current = { x: e.clientX, y: e.clientY }; };
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    dragRef.current.x += e.clientX - last.current.x;
-    dragRef.current.y = Math.max(-400, Math.min(400, dragRef.current.y + (e.clientY - last.current.y)));
-    last.current = { x: e.clientX, y: e.clientY };
-  };
-  const onPointerUp = () => { dragging.current = false; };
-
-  return (
-    <div
-      className="fixed inset-0 z-0"
-      style={{ touchAction: 'pan-y', cursor: 'grab' }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerLeave={onPointerUp}
-      aria-hidden="true"
-    >
-      <Canvas
-        shadows={quality === 'high'}
-        dpr={quality === 'low' ? [1, 1.25] : [1, 1.75]}
-        camera={{ position: [0, 20, 52], fov: 42, near: 0.1, far: 400 }}
-        gl={{ antialias: true, powerPreference: 'high-performance', alpha: true }}
-      >
-        <fog attach="fog" args={['#0A0A0B', 70, 160]} />
-        <ambientLight intensity={0.35 * lighting} />
-        <hemisphereLight args={['#2A3444', '#0A0A0B', 0.5 * lighting]} />
-        <directionalLight
-          position={[30, 55, 20]}
-          intensity={1.6 * lighting}
-          castShadow={quality === 'high'}
-          shadow-mapSize={[2048, 2048]}
-          shadow-camera-left={-50} shadow-camera-right={50}
-          shadow-camera-top={60} shadow-camera-bottom={-20}
-        />
-        <pointLight position={[-35, 30, -25]} intensity={40 * lighting} color="#5B7DB1" />
-        <pointLight position={[0, 68, 0]} intensity={25 * lighting} color="#C9A96A" />
-        <Suspense fallback={null}>
-          <ProceduralTower quality={quality} rotationSpeed={rotationSpeed} />
-          <ContextBuildings quality={quality} />
-          <Dust quality={quality} />
-          <Environment resolution={256}>
-            <Lightformer intensity={2} position={[0, 5, -9]} scale={[10, 10, 1]} color="#E8D5A8" />
-            <Lightformer intensity={1} position={[-5, 1, -1]} scale={[20, 0.5, 1]} rotation-y={Math.PI / 2} color="#5B7DB1" />
-            <Lightformer intensity={1} position={[5, 1, -1]} scale={[20, 1, 1]} rotation-y={Math.PI / 2} color="#C9A96A" />
-          </Environment>
-        </Suspense>
-        {/* Ground */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-          <planeGeometry args={[220, 220]} />
-          <meshStandardMaterial color="#0C0C0E" metalness={0.7} roughness={0.35} />
-        </mesh>
-        <gridHelper args={[160, 40, '#2A2D33', '#1A1A1E']} position={[0, 0.02, 0]} />
-        <ContactShadows position={[0, 0.05, 0]} opacity={0.75} scale={90} blur={2.2} far={30} color="#000000" />
-        <CameraRig scrollRef={scrollRef} dragRef={dragRef} quality={quality} />
-      </Canvas>
-    </div>
-  );
+export default function Skyscraper3D({ lighting = 1.2 }: { rotationSpeed?: number; lighting?: number; modelUrl?: string }) {
+  const [webgl, setWebgl] = useState(true);
+  useEffect(() => { try { const c = document.createElement('canvas'); setWebgl(Boolean(c.getContext('webgl2') || c.getContext('webgl'))); } catch { setWebgl(false); } }, []);
+  const intensity = Number.isFinite(lighting) ? Math.max(0.3, Math.min(lighting, 2)) : 1.2;
+  return <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, #555347 0%, #252b29 45%, #111514 100%)' }}>
+    {webgl ? <Canvas dpr={[1, 1.5]} camera={{ position: [24, 10, 38], fov: 38, near: 0.1, far: 200 }} gl={{ antialias: true, alpha: true, powerPreference: 'default' }}>
+      <ambientLight intensity={0.6 * intensity} /><hemisphereLight args={['#c6d6d4', '#4d4035', 0.8 * intensity]} />
+      <directionalLight position={[12, 24, 18]} intensity={2 * intensity} color="#ffe1b1" /><directionalLight position={[-15, 10, -12]} intensity={1.3 * intensity} color="#a9c8d0" />
+      <Suspense fallback={null}><Tower /><Environment resolution={128}><Lightformer intensity={3} position={[10, 10, 10]} scale={[8, 25, 1]} /><Lightformer intensity={2} position={[-10, 5, -5]} scale={[6, 20, 1]} color="#d2e5e5" /><Lightformer intensity={3} position={[0, 18, -10]} scale={[15, 8, 1]} color="#ffdfb4" /></Environment><ContactShadows position={[0, -12, 0]} scale={25} opacity={0.5} blur={2.5} far={10} /></Suspense>
+      <Camera /><OrbitControls makeDefault enableZoom={false} enablePan={false} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 2.05} rotateSpeed={0.5} />
+    </Canvas> : <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: 'url(/images/editorial-architecture.jpg)' }} />}
+  </div>;
 }

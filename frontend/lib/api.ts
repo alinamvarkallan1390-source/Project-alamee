@@ -13,8 +13,10 @@ export async function getSettings(): Promise<Record<string, string>> {
   try { const d = await fetchJSON('/api/settings'); return { ...seedSettings, ...(d.settings || d) }; }
   catch { return seedSettings; }
 }
+const sampleImages: Record<string, string> = { 'villa-lumiere': '/images/editorial-architecture.jpg', 'crown-hotel': '/images/interior-editorial.jpg' };
+
 export async function getProjects(): Promise<any[]> {
-  try { const d = await fetchJSON('/api/projects'); return (d.projects || d).filter((p: any) => p.is_published !== false); }
+  try { const d = await fetchJSON('/api/projects'); return (d.projects || d).filter((p: any) => p.is_published !== false).map((p: any) => sampleImages[p.slug] && (!p.cover_image || ['/images/3d-facade.png', '/images/hero-3d.png', '/images/3d-process.png'].includes(p.cover_image)) ? { ...p, cover_image: sampleImages[p.slug] } : p); }
   catch { return seedProjects; }
 }
 export async function getServices(): Promise<any[]> {

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   if (!body.name || !body.email || !body.message) return NextResponse.json({ error: 'Name, email and message are required' }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
   const sb = getSupabaseAdmin();
-  if (!sb) return NextResponse.json({ ok: true, note: 'Stored locally (database not configured)' });
+  if (!sb) return NextResponse.json({ error: 'Contact service is not configured' }, { status: 503 });
   const { data, error } = await sb.from('contact_messages').insert({
     name: String(body.name).slice(0, 200), email: String(body.email).slice(0, 200),
     phone: String(body.phone || '').slice(0, 50), subject: String(body.subject || '').slice(0, 200),

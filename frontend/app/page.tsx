@@ -1,104 +1,54 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { PageShell } from '@/components/PageShell';
 import { useI18n, useContent } from '@/lib/i18n';
 import { useSiteData } from '@/lib/useSiteData';
-import { useRef, useState, useEffect } from 'react';
 
-function Counter({ value }: { value: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    const num = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
-    const io = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      io.disconnect();
-      const start = performance.now();
-      const tick = (t: number) => {
-        const p = Math.max(0, Math.min(1, (t - start) / 1600));
-        setN(num * (1 - Math.pow(1 - p, 3)));
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }, { threshold: 0.4 });
-    if (ref.current) io.observe(ref.current);
-    return () => io.disconnect();
-  }, [value]);
-  const num = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
-  const suffix = value.replace(/[0-9.]/g, '');
-  const decimals = (value.match(/\./g) || []).length ? 1 : 0;
-  return <span ref={ref}>{n.toFixed(decimals)}{suffix}</span>;
-}
+const Skyscraper3D = dynamic(() => import('@/components/Skyscraper3D'), { ssr: false, loading: () => <div className="absolute inset-0 bg-[#171a19]" /> });
 
 export default function Home() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const tc = useContent();
-  const { settings, sec } = useSiteData();
-
-  useEffect(() => {
-    const els = document.querySelectorAll('.reveal');
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.12 });
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
-
-  const cards = [
-    { href: '/about', label: t('nav.about') },
-    { href: '/projects', label: t('nav.projects') },
-    { href: '/services', label: t('nav.services') },
-    { href: '/process', label: t('nav.process') },
-    { href: '/contact', label: t('nav.contact') }
-  ];
-
+  const { settings, projects, services } = useSiteData();
+  const fa = lang === 'fa';
   return (
     <PageShell active="home">
-      {/* HERO */}
-      <section className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <p className="reveal text-xs tracking-[0.5em] text-champagne uppercase">{tc(settings.tagline || t('hero.tagline'))}</p>
-        <h1 className="reveal mt-6 max-w-5xl font-serif text-4xl leading-tight md:text-6xl">
-          {tc(settings.hero_title || t('hero.title'))}
-        </h1>
-        <p className="reveal mt-6 max-w-2xl text-ivory/70 md:text-lg">{tc(settings.hero_subtitle || t('hero.subtitle'))}</p>
-        <div className="reveal mt-10 flex flex-wrap justify-center gap-4">
-          <a href="/projects" className="rounded-full bg-champagne px-8 py-3 font-semibold text-graphite hover:bg-champagneLight transition">{t('hero.explore')}</a>
-          <a href="/contact" className="rounded-full border border-ivory/30 px-8 py-3 hover:border-champagne hover:text-champagne transition">{t('hero.start')}</a>
+      <section className="relative mx-auto grid min-h-[100svh] max-w-[1600px] items-center gap-0 px-6 pb-16 pt-28 md:grid-cols-2 md:px-12 md:pt-32">
+        <div className="relative order-2 z-10 pb-8 pt-4 md:order-1 md:py-20">
+          <p className="text-xs tracking-[.3em] text-champagne uppercase">ALAMEE · Architecture & Construction</p>
+          <h1 className="mt-6 max-w-xl font-serif text-4xl leading-[1.35] md:text-6xl">{settings.hero_title && settings.hero_title !== 'ما اعیاد می‌سازیم، نه فقط ساختمان' ? tc(settings.hero_title) : (fa ? 'فضاهایی برای زندگی، بناهایی برای ماندن' : 'Spaces for life. Built to last.')}</h1>
+          <p className="mt-6 max-w-xl text-base leading-8 text-ivory/75 md:text-lg">{tc(settings.hero_subtitle || (fa ? 'از اولین ایده تا آخرین جزئیات، آینده را با دقت و خیال می‌سازیم.' : 'From the first idea to the final detail, we build the future with imagination and care.'))}</p>
+          <div className="mt-8 flex flex-wrap gap-3"><a href="/projects" className="rounded-full bg-champagne px-8 py-3 font-semibold text-graphite transition hover:bg-champagneLight">{t('hero.explore')} ↗</a><a href="/contact" className="rounded-full border border-ivory/40 px-8 py-3 transition hover:border-champagne hover:text-champagne">{t('hero.start')}</a></div>
+          <p className="mt-10 text-xs tracking-widest text-ivory/60">{fa ? 'برای کشف بیشتر اسکرول کنید ↓' : 'SCROLL TO EXPLORE ↓'}</p>
         </div>
-        <div className="mt-16 flex flex-col items-center gap-2 text-ivory/50">
-          <span className="text-[10px] tracking-[0.4em] uppercase">{t('hero.scroll')}</span>
-          <span className="flex h-10 w-6 justify-center rounded-full border border-ivory/30 pt-2"><span className="scroll-dot h-2 w-1 rounded-full bg-champagne" /></span>
-        </div>
-        <p className="mt-6 text-xs text-ivory/40">{t('hero.drag')}</p>
-      </section>
-
-      {/* SECTION LINKS */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <div className="reveal grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
-          {cards.map((c, i) => (
-            <a key={c.href} href={c.href} className="reveal glass group flex flex-col items-center gap-3 rounded-3xl p-8 text-center hover:border-champagne/60 transition">
-              <span className="font-serif text-4xl gold-text">{String(i + 1).padStart(2, '0')}</span>
-              <span className="font-serif text-lg">{c.label}</span>
-            </a>
-          ))}
+        <div className="relative order-1 h-[48svh] min-h-[320px] overflow-hidden rounded-3xl border border-white/15 shadow-2xl md:order-2 md:h-[75svh] md:min-h-[540px]">
+          <Skyscraper3D lighting={parseFloat(settings.lighting_intensity || '1.2')} />
+          <span className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-[10px] tracking-widest text-ivory/80">{fa ? 'مدل مفهومی • برای چرخاندن بکشید ↔' : 'CONCEPT MODEL • DRAG TO ROTATE ↔'}</span>
         </div>
       </section>
 
-      {/* STATS */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <div className="reveal glass grid grid-cols-2 gap-8 rounded-3xl p-10 text-center md:grid-cols-4">
-          {[
-            { v: settings.stats_projects || '128', l: t('stats.projects') },
-            { v: settings.stats_years || '18', l: t('stats.years') },
-            { v: settings.stats_area || '2.4M', l: t('stats.area') },
-            { v: settings.stats_team || '340', l: t('stats.team') }
-          ].map((s) => (
-            <div key={s.l}>
-              <p className="font-serif text-4xl md:text-5xl gold-text"><Counter value={s.v} /></p>
-              <p className="mt-2 text-xs tracking-widest text-ivory/60 uppercase">{s.l}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="relative bg-[#101011]">
+        <section className="mx-auto grid max-w-7xl gap-12 px-6 py-24 md:grid-cols-2 md:items-center md:px-12 md:py-36">
+          <div>
+            <p className="text-xs tracking-[.3em] text-champagne uppercase">01 / {fa ? 'نگاه ما' : 'OUR APPROACH'}</p>
+            <h2 className="mt-6 font-serif text-3xl leading-snug md:text-5xl">{fa ? 'معماری، هنر ساختن تجربه است.' : 'Architecture is the art of creating experiences.'}</h2>
+            <p className="mt-6 max-w-xl text-base leading-8 text-ivory/65">{fa ? 'هر پروژه با یک ایده آغاز می‌شود؛ ایده‌ای که با شناخت مکان، نور، متریال و نیاز آدم‌ها شکل می‌گیرد. ما طراحی و اجرا را به هم پیوند می‌دهیم تا فضاهایی خلق شوند که امروز چشمگیر و فردا همچنان ارزشمند باشند.' : 'Every project begins with an idea shaped by place, light, materials and people. We bring design and construction together to create spaces that feel remarkable today and meaningful tomorrow.'}</p>
+            <a href="/about" className="mt-8 inline-block border-b border-champagne pb-2 text-sm text-champagne">{fa ? 'بیشتر درباره ما' : 'More about us'} ↗</a>
+          </div>
+          <div className="relative"><img src="/images/editorial-architecture.jpg" alt={fa ? 'تصویر مفهومی معماری معاصر' : 'Concept image of contemporary architecture'} className="aspect-[4/3] w-full rounded-sm object-cover" /><p className="mt-3 text-xs text-ivory/40">{fa ? 'تصویر مفهومی معماری' : 'ARCHITECTURAL CONCEPT IMAGE'}</p></div>
+        </section>
+
+        <section className="border-t border-white/10 px-6 py-24 md:px-12">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-wrap items-end justify-between gap-6"><div><p className="text-xs tracking-[.3em] text-champagne">02 / {fa ? 'مجموعه پروژه‌ها' : 'THE COLLECTION'}</p><h2 className="mt-5 font-serif text-3xl md:text-5xl">{fa ? 'ایده‌هایی که شکل می‌گیرند' : 'Ideas taking shape'}</h2></div><a href="/projects" className="border-b border-champagne pb-2 text-sm text-champagne">{fa ? 'مشاهده همه پروژه‌ها' : 'Explore all projects'} ↗</a></div>
+            <div className="mt-12 grid gap-7 md:grid-cols-3">{projects.slice(0, 3).map((p, i) => <a href="/projects" key={p.id} className="group"><div className="overflow-hidden bg-coal"><img src={p.cover_image || '/images/editorial-architecture.jpg'} alt={tc(p.title)} className="aspect-[4/5] w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" /></div><div className="mt-5 flex justify-between gap-4"><div><p className="text-xs text-champagne">0{i + 1} / {tc(p.category)}</p><h3 className="mt-2 font-serif text-2xl">{tc(p.title)}</h3><p className="mt-2 text-sm text-ivory/50">{p.location}</p></div><span className="text-champagne">↗</span></div></a>)}</div>
+            <p className="mt-8 text-xs text-ivory/40">{fa ? 'تصاویر و پروژه‌های نمونه تا زمان جایگزینی با محتوای واقعی نمایش داده می‌شوند.' : 'Sample projects and imagery are shown until replaced with actual content.'}</p>
+          </div>
+        </section>
+
+        <section className="border-t border-white/10 px-6 py-24 md:px-12"><div className="mx-auto max-w-7xl"><p className="text-xs tracking-[.3em] text-champagne">03 / {fa ? 'تخصص ما' : 'OUR EXPERTISE'}</p><div className="mt-6 grid gap-10 md:grid-cols-2"><h2 className="font-serif text-3xl leading-snug md:text-5xl">{fa ? 'از تصور تا ساخت، کنار شما.' : 'From vision to reality, together.'}</h2><p className="max-w-xl leading-8 text-ivory/65">{fa ? 'نگاهی یکپارچه به تمام مراحل پروژه؛ از طراحی مفهومی و مهندسی تا ساخت و طراحی داخلی، با توجه به کیفیت هر جزئیات.' : 'An integrated approach to every stage, from concept and engineering to construction and interiors, with attention to every detail.'}</p></div><div className="mt-12 grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">{services.slice(0, 6).map((s, i) => <div key={s.id} className="bg-[#151515] p-8"><span className="text-xs text-champagne">0{i + 1}</span><h3 className="mt-6 font-serif text-2xl">{tc(s.title)}</h3><p className="mt-4 text-sm leading-7 text-ivory/60">{tc(s.description)}</p></div>)}</div><a href="/services" className="mt-8 inline-block border-b border-champagne pb-2 text-sm text-champagne">{fa ? 'تمام خدمات' : 'All services'} ↗</a></div></section>
+        <section className="border-t border-white/10 px-6 py-24 text-center md:py-32"><p className="text-xs tracking-[.3em] text-champagne">LET’S CREATE SOMETHING LASTING</p><h2 className="mx-auto mt-6 max-w-3xl font-serif text-3xl leading-snug md:text-5xl">{fa ? 'ایده‌ای در ذهن دارید؟ بیایید درباره آن صحبت کنیم.' : 'Have an idea in mind? Let’s talk about it.'}</h2><a href="/contact" className="mt-9 inline-block rounded-full bg-champagne px-9 py-4 font-semibold text-graphite">{fa ? 'شروع گفتگو' : 'Start a conversation'} ↗</a></section>
+      </div>
     </PageShell>
   );
 }

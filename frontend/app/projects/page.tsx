@@ -5,7 +5,7 @@ import { useI18n, useContent } from '@/lib/i18n';
 import { useSiteData } from '@/lib/useSiteData';
 
 export default function ProjectsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const tc = useContent();
   const { projects, sec } = useSiteData();
   const [cat, setCat] = useState('');
@@ -23,17 +23,18 @@ export default function ProjectsPage() {
           <p className="text-xs tracking-[0.4em] text-champagne uppercase">{tc(sec('projects').subtitle || t('projects.subtitle'))}</p>
           <h1 className="mt-4 font-serif text-4xl md:text-6xl">{tc(sec('projects').title || t('projects.title'))}</h1>
         </div>
+        <p className="mx-auto mt-5 max-w-2xl text-center leading-8 text-ivory/65">{lang === 'fa' ? 'مجموعه‌ای از ایده‌های معماری، از فضاهای مسکونی آرام تا بناهای شهری شاخص. پروژه‌های نمونه زیر برای نمایش رویکرد طراحی هستند.' : 'A collection of architectural ideas, from quiet residences to distinctive urban spaces. The following sample projects illustrate our approach.'}</p>
         <div className="reveal mt-10 flex flex-wrap justify-center gap-3">
           <select value={cat} onChange={(e) => setCat(e.target.value)} className="rounded-full border border-ivory/20 bg-coal px-5 py-2 text-sm" aria-label={t('projects.cat')}>
-            {categories.map((c) => <option key={c} value={c}>{c || t('projects.all')}</option>)}
+            {categories.map((c) => <option key={c} value={c}>{c ? tc(c) : t('projects.all')}</option>)}
           </select>
           <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-full border border-ivory/20 bg-coal px-5 py-2 text-sm" aria-label={t('projects.status')}>
-            {statuses.map((s) => <option key={s} value={s}>{s || t('projects.all')}</option>)}
+            {statuses.map((s) => <option key={s} value={s}>{s ? tc(s) : t('projects.all')}</option>)}
           </select>
         </div>
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <article key={p.id} className="reveal group cursor-pointer overflow-hidden rounded-3xl border border-ivory/10 bg-coal/80 backdrop-blur" onClick={() => setSelected(p)}>
+            <article key={p.id} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(p); } }} className="reveal group cursor-pointer overflow-hidden rounded-3xl border border-ivory/10 bg-coal/80 backdrop-blur" onClick={() => setSelected(p)}>
               <div className="relative h-64 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.cover_image || '/images/3d-facade.png'} alt={p.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" loading="lazy" />
@@ -52,7 +53,7 @@ export default function ProjectsPage() {
       </section>
 
       {selected && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setSelected(null)}>
+        <div role="dialog" aria-modal="true" aria-label={tc(selected.title)} onKeyDown={(e) => { if (e.key === 'Escape') setSelected(null); }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setSelected(null)}>
           <div className="glass max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl" onClick={(e) => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={selected.cover_image || '/images/3d-facade.png'} alt={selected.title} className="h-72 w-full object-cover" />

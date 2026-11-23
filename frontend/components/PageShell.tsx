@@ -1,25 +1,7 @@
 'use client';
-import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useI18n, useContent } from '@/lib/i18n';
 import { useSiteData } from '@/lib/useSiteData';
-
-const Skyscraper3D = dynamic(
-  () => import('@/components/Skyscraper3D'),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: 'url(/images/hero-3d.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-    ),
-  }
-);
 
 export function PageShell({ children, active }: { children: React.ReactNode; active?: string }) {
   const { t, lang, setLang } = useI18n();
@@ -33,17 +15,11 @@ export function PageShell({ children, active }: { children: React.ReactNode; act
     if (saved) setBw(saved === '1');
   }, []);
 
-  const toggleBw = async () => {
+  const toggleBw = () => {
     const next = !bw;
     setBw(next);
     localStorage.setItem('alamee_bw', next ? '1' : '0');
-    try {
-      await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: { theme_mode: next ? 'bw' : 'color' } }),
-      });
-    } catch { /* offline: local toggle only */ }
+
   };
 
   useEffect(() => {
@@ -62,8 +38,7 @@ export function PageShell({ children, active }: { children: React.ReactNode; act
 
   return (
     <div className={`relative min-h-screen bg-graphite text-ivory ${bw ? 'bw-theme' : ''}`} dir={lang === 'fa' ? 'rtl' : 'ltr'}>
-      <Skyscraper3D rotationSpeed={parseFloat(settings.rotation_speed || '0.35')} lighting={parseFloat(settings.lighting_intensity || '1.2')} />
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-gradient-to-b from-black/55 via-transparent to-black/75" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_at_top,#292823_0%,#101011_55%)]" />
 
       <header className="fixed top-0 start-0 end-0 z-50">
         <div className="glass mx-3 mt-3 rounded-2xl px-5 py-3 flex items-center justify-between md:mx-8 md:mt-5 md:px-8">
@@ -91,7 +66,7 @@ export function PageShell({ children, active }: { children: React.ReactNode; act
             >
               {t('nav.lang')}
             </button>
-            <button className="md:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">☰</button>
+            <button className="md:hidden text-2xl" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">☰</button>
           </div>
         </div>
         {menuOpen && (
