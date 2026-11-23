@@ -1,0 +1,22 @@
+# Next.js build artifacts
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Build
+dist/
+build/

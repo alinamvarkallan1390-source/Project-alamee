@@ -1,0 +1,9 @@
+services:
+  api:
+    build: ./Alamee.Api
+    ports: ["8080:8080"]
+    env_file:
+      - ./Alamee.Api/appsettings.json
+    environment:
+      ConnectionStrings__DefaultConnection: ${DB_CONNECTION_STRING}
+      Jwt__Key: ${JWT_SECRET}
