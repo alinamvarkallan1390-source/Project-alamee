@@ -23,7 +23,7 @@ export default function ProjectsPage() {
           <p className="text-xs tracking-[0.4em] text-champagne uppercase">{tc(sec('projects').subtitle || t('projects.subtitle'))}</p>
           <h1 className="mt-4 font-serif text-4xl md:text-6xl">{tc(sec('projects').title || t('projects.title'))}</h1>
         </div>
-        <p className="mx-auto mt-5 max-w-2xl text-center leading-8 text-ivory/65">{lang === 'fa' ? 'مجموعه‌ای از ایده‌های معماری، از فضاهای مسکونی آرام تا بناهای شهری شاخص. پروژه‌های نمونه زیر برای نمایش رویکرد طراحی هستند.' : 'A collection of architectural ideas, from quiet residences to distinctive urban spaces. The following sample projects illustrate our approach.'}</p>
+        <p className="mx-auto mt-5 max-w-2xl text-center leading-8 text-ivory/65">{lang === 'fa' ? 'مجموعه‌ای از ایده‌های معماری، از فضاهای مسکونی آرام تا بناهای شهری شاخص؛ جایی که طراحی، متریال و جزئیات در کنار هم قرار می‌گیرند.' : 'A collection of architectural ideas, from quiet residences to distinctive urban spaces, bringing together design, materials and detail.'}</p>
         <div className="reveal mt-10 flex flex-wrap justify-center gap-3">
           <select value={cat} onChange={(e) => setCat(e.target.value)} className="rounded-full border border-ivory/20 bg-coal px-5 py-2 text-sm" aria-label={t('projects.cat')}>
             {categories.map((c) => <option key={c} value={c}>{c ? tc(c) : t('projects.all')}</option>)}

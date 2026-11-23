@@ -1,7 +1,8 @@
 'use client';
-import { Canvas, useThree } from '@react-three/fiber';
-import { Environment, Lightformer, OrbitControls, ContactShadows } from '@react-three/drei';
-import { Suspense, useEffect, useState } from 'react';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { Environment, Lightformer, ContactShadows } from '@react-three/drei';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
 
 /* A conceptual tower made from three offset glass volumes with terraces. */
 function Volume({ y, height, width, depth, x = 0, z = 0 }: { y: number; height: number; width: number; depth: number; x?: number; z?: number }) {
@@ -21,7 +22,20 @@ function Volume({ y, height, width, depth, x = 0, z = 0 }: { y: number; height: 
   </group>;
 }
 function Tower() {
-  return <group position={[0, -12, 0]} rotation={[0, -0.2, 0]}>
+  const ref = useRef<THREE.Group>(null!);
+  const scroll = useRef(0);
+  const reduced = useRef(false);
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => { reduced.current = media.matches; };
+    const onScroll = () => { scroll.current = Math.min(1, Math.max(0, window.scrollY / Math.max(window.innerHeight * 0.9, 1))); };
+    update(); onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    media.addEventListener('change', update);
+    return () => { window.removeEventListener('scroll', onScroll); media.removeEventListener('change', update); };
+  }, []);
+  useFrame((_, delta) => { if (ref.current) ref.current.rotation.y = THREE.MathUtils.damp(ref.current.rotation.y, reduced.current ? -0.2 : -0.2 + scroll.current * 1.8, 3, delta); });
+  return <group ref={ref} position={[0, -12, 0]} rotation={[0, -0.2, 0]}>
     <mesh position={[0, 0.15, 0]}><boxGeometry args={[11, 0.3, 9]} /><meshStandardMaterial color="#857b6d" roughness={0.85} /></mesh>
     <mesh position={[0, 1, 0]}><boxGeometry args={[8, 1.6, 6.5]} /><meshPhysicalMaterial color="#404f50" metalness={0.75} roughness={0.22} clearcoat={1} /></mesh>
     <mesh position={[0, 1.85, 0]}><boxGeometry args={[8.5, 0.18, 7]} /><meshStandardMaterial color="#cbb899" metalness={0.5} roughness={0.4} /></mesh>
@@ -48,12 +62,12 @@ export default function Skyscraper3D({ lighting = 1.2 }: { rotationSpeed?: numbe
   const [webgl, setWebgl] = useState(true);
   useEffect(() => { try { const c = document.createElement('canvas'); setWebgl(Boolean(c.getContext('webgl2') || c.getContext('webgl'))); } catch { setWebgl(false); } }, []);
   const intensity = Number.isFinite(lighting) ? Math.max(0.3, Math.min(lighting, 2)) : 1.2;
-  return <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, #555347 0%, #252b29 45%, #111514 100%)' }}>
+  return <div className="pointer-events-none absolute inset-0" aria-hidden="true" style={{ background: "linear-gradient(to bottom, rgba(8,10,10,.2), rgba(8,10,10,.45)), url(/images/architectural-atmosphere.jpg) center / cover" }}>
     {webgl ? <Canvas dpr={[1, 1.5]} camera={{ position: [24, 10, 38], fov: 38, near: 0.1, far: 200 }} gl={{ antialias: true, alpha: true, powerPreference: 'default' }}>
       <ambientLight intensity={0.6 * intensity} /><hemisphereLight args={['#c6d6d4', '#4d4035', 0.8 * intensity]} />
       <directionalLight position={[12, 24, 18]} intensity={2 * intensity} color="#ffe1b1" /><directionalLight position={[-15, 10, -12]} intensity={1.3 * intensity} color="#a9c8d0" />
       <Suspense fallback={null}><Tower /><Environment resolution={128}><Lightformer intensity={3} position={[10, 10, 10]} scale={[8, 25, 1]} /><Lightformer intensity={2} position={[-10, 5, -5]} scale={[6, 20, 1]} color="#d2e5e5" /><Lightformer intensity={3} position={[0, 18, -10]} scale={[15, 8, 1]} color="#ffdfb4" /></Environment><ContactShadows position={[0, -12, 0]} scale={25} opacity={0.5} blur={2.5} far={10} /></Suspense>
-      <Camera /><OrbitControls makeDefault enableZoom={false} enablePan={false} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 2.05} rotateSpeed={0.5} />
+      <Camera />
     </Canvas> : <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: 'url(/images/editorial-architecture.jpg)' }} />}
   </div>;
 }
